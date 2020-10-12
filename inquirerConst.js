@@ -5,4 +5,10 @@ function InquirerList(name, message, choices){
     this.type = "list";
 }
 
-module.exports = InquirerList;
+function InquirerInput(name, message){
+    this.name = name;
+    this.message = message;
+    this.type = "input";
+}
+
+module.exports = {InquirerList , InquirerInput};

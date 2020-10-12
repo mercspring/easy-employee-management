@@ -26,9 +26,9 @@ async function promptUser() {
     // console.log(connection);
     const answers = await inquirer.prompt([
         new InquirerList("option", "Select an Action", ["View Employees", "View Employees by Department"
-            , "View Employees by Manager", "Add Employee", "Add Department", "Add Role",
-            "Remove Employee", "View Roles", "View Departments", "Update Employee Role", "Remove Role",
-            "Quit"])
+            , "View Employees by Manager", "View Roles", "View Departments", "Add Employee", "Add Department", "Add Role",
+            "Update Employee Role", "Update Employee Manager", "Update Role Department", "Update Role Salary",
+            "Remove Employee", "Remove Role", "Remove Department", "Quit"])
     ])
     switch (answers.option) {
         case 'View Employees':
@@ -71,12 +71,28 @@ async function promptUser() {
             await removeRole();
             await promptUser();
             break;
+        case 'Remove Department':
+            await removeDepartment();
+            await promptUser();
+            break;
         case 'Update Employee Role':
             await updateEmployeeRole();
             await promptUser();
             break;
+        case 'Update Employee Manager':
+            await updateEmployeeManager();
+            await promptUser();
+            break;
         case 'View Departments':
             await viewDepartments();
+            await promptUser();
+            break;
+        case 'Update Role Department':
+            await updateRoleDepartment();
+            await promptUser();
+            break;
+        case 'Update Role Salary':
+            await updateRoleSalary();
             await promptUser();
             break;
         case 'Quit':
@@ -168,7 +184,7 @@ async function addEmployee() {
 }
 
 async function viewEmployees() {
-    let employees = await query("SELECT first_name, last_name, title, salary FROM employees LEFT JOIN roles ON employees.role_id = roles.id;");
+    let employees = await query("SELECT concat(employees.first_name,' ', employees.last_name) as Employee, title as Title, salary as Salary, dept_name as Department, concat(managers.first_name,' ',managers.last_name) as manager FROM employees left join employees as managers on employees.manager_id = managers.id LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON departments.id = roles.department_id");
     employees.map(addDashes)
 
     console.table(employees);
@@ -202,14 +218,68 @@ async function viewEmployeesManager() {
 
 function addDashes(obj) {
     for (key in obj) {
-    
+
         if (obj[key] === null) {
             obj[key] = "-";
         }
-        console.log(obj[key])
     }
- return obj
+    return obj
 }
 
+async function removeDepartment() {
+    let departments = await query("SELECT dept_name, id FROM departments;");
+    departments = departments.map(elm => { return { name: elm.dept_name, value: elm.id } });
+    const answers = await inquirer.prompt([
+        new InquirerList("id", "Which department would you like to remove?", departments)
+    ])
+    await query("DELETE FROM departments WHERE ? ", answers);
+}
+
+async function updateEmployeeManager() {
+    let employees = await query("SELECT first_name, last_name, title, employees.id FROM employees LEFT JOIN roles ON employees.role_id = roles.id;");
+    employees.map(addDashes)
+    employees = employees.map((elm) => { return { name: elm.first_name + " " + elm.last_name + " | " + elm.title, value: elm.id } });
+
+    const answers = await inquirer.prompt([
+        new InquirerList("employee_id", "Who is getting a new manager?", employees),
+        new InquirerList("manager_id", "Who is their new manager?", employees)
+    ])
+
+    if (answers.employee_id === answers.manager_id) {
+        return console.log("Employee can't be their own manger.")
+    } else {
+        query("UPDATE employees SET manager_id = ? WHERE id = ?", [answers.manager_id, answers.employee_id]);
+        console.table("Updated manger");
+    }
+}
+
+async function updateRoleDepartment() {
+    let roles = await query("SELECT title, salary, id FROM roles");
+    roles = roles.map((elm) => { return { name: elm.title + " " + elm.salary, value: elm.id } });
+
+    let departments = await query("SELECT dept_name, id FROM departments");
+    departments = departments.map((elm) => { return { name: elm.dept_name, value: elm.id } });
+
+    const answers = await inquirer.prompt([
+        new InquirerList("role_id", "Which role would you like to move to a new department", roles),
+        new InquirerList("department_id", "What department would you like to move this role to?", departments)
+    ])
+    await query("UPDATE roles SET department_id = ? WHERE id = ?", [answers.department_id, answers.role_id]);
+}
+async function updateRoleSalary() {
+    let roles = await query("SELECT title, salary, id FROM roles");
+    roles = roles.map((elm) => { return { name: elm.title + " " + elm.salary, value: elm.id } });
+
+    let answers = await inquirer.prompt([
+        new InquirerList("id", "Which role would you like to give a new salary?", roles),
+        new InquirerInput("salary", "What salary would you like to give this role?")
+    ])
+    answers.salary = parseFloat(answers.salary)
+    if (!answers.salary) {
+        return console.log("Please provide a number for the salary.")
+    }
+    await query("UPDATE roles SET salary = ? WHERE id = ?", [answers.salary, answers.id]);
+    console.log("Updated Salary")
+}
 init();
 

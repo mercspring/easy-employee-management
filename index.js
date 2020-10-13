@@ -26,7 +26,7 @@ async function promptUser() {
     // console.log(connection);
     const answers = await inquirer.prompt([
         new InquirerList("option", "Select an Action", ["View Employees", "View Employees by Department"
-            , "View Employees by Manager", "View Roles", "View Departments", "Add Employee", "Add Department", "Add Role",
+            , "View Employees by Manager", "View Roles", "View Departments", "View Department Operating Cost", "Add Employee", "Add Department", "Add Role",
             "Update Employee Role", "Update Employee Manager", "Update Role Department", "Update Role Salary",
             "Remove Employee", "Remove Role", "Remove Department", "Quit"])
     ])
@@ -45,6 +45,10 @@ async function promptUser() {
             break;
         case 'View Employees by Manager':
             await viewEmployeesManager();
+            await promptUser();
+            break;
+        case 'View Department Operating Cost':
+            await viewDepartmentBudget();
             await promptUser();
             break;
         case 'Add Employee':
@@ -126,7 +130,7 @@ async function updateEmployeeRole() {
     await query("UPDATE employees SET role_id = ? WHERE id = ?", [answers.role_id, answers.employee_id]);
 }
 async function viewDepartments() {
-    let departments = await query("SELECT dept_name FROM departments");
+    const departments = await query("SELECT dept_name FROM departments");
     console.table(departments);
 }
 
@@ -139,6 +143,12 @@ async function addRole() {
         new InquirerInput("salary", "How much does this role pay?"),
         new InquirerList("department_id", "What department is this role in?", departments)
     ])
+
+    answers.salary = parseFloat(answers.salary)
+    if (!answers.salary) {
+        return console.log("Please provide a number for the salary.")
+    }
+
     await query("INSERT INTO roles SET ?", answers);
 }
 async function addDepartment() {
@@ -148,7 +158,7 @@ async function addDepartment() {
     await query("INSERT INTO departments SET ?", answers);
 }
 async function viewRoles() {
-    let roles = await query("SELECT title, salary, dept_name FROM roles JOIN departments ON departments.id = roles.department_id;");
+    let roles = await query("SELECT title, salary, dept_name as department FROM roles JOIN departments ON departments.id = roles.department_id;");
     console.table(roles)
 }
 async function removeEmployee() {
@@ -280,6 +290,10 @@ async function updateRoleSalary() {
     }
     await query("UPDATE roles SET salary = ? WHERE id = ?", [answers.salary, answers.id]);
     console.log("Updated Salary")
+}
+async function viewDepartmentBudget() {
+    const departments = await query("SELECT dept_name as Department, SUM(salary) as 'Operating Cost' FROM  departments JOIN roles ON departments.id = roles.department_id JOIN employees on employees.role_id = roles.id GROUP BY dept_name;")
+    console.table(departments)
 }
 init();
 

@@ -119,7 +119,7 @@ async function removeRole() {
     await query("DELETE FROM roles WHERE ? ", answers)
 }
 async function updateEmployeeRole() {
-    let employees = await query("SELECT first_name, last_name, employees.id, title FROM employees JOIN roles ON employees.role_id = roles.id")
+    let employees = await query("SELECT first_name, last_name, employees.id, title FROM employees LEFT JOIN roles ON employees.role_id = roles.id")
     employees = employees.map(elm => { return { name: elm.first_name + " " + elm.last_name, value: elm.id } });
     let roles = await query("SELECT title, id FROM roles");
     roles = roles.map(elm => { return { name: elm.title, value: elm.id } });
@@ -184,7 +184,6 @@ async function addEmployee() {
         new InquirerList("manager_id", "Who is their manager?", employees),
         new InquirerList("role_id", "What is their role?", roles)
     ])
-    console.log(answers);
     if (answers.manager_id != null) {
         await query("INSERT INTO employees SET ?", answers)
     } else {
@@ -194,7 +193,7 @@ async function addEmployee() {
 }
 
 async function viewEmployees() {
-    let employees = await query("SELECT concat(employees.first_name,' ', employees.last_name) as Employee, title as Title, salary as Salary, dept_name as Department, concat(managers.first_name,' ',managers.last_name) as manager FROM employees left join employees as managers on employees.manager_id = managers.id LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON departments.id = roles.department_id");
+    let employees = await query("SELECT concat(employees.first_name,' ', employees.last_name) as Employee, title as Title, salary as Salary, dept_name as Department, concat(managers.first_name,' ',managers.last_name) as Manager FROM employees left join employees as managers on employees.manager_id = managers.id LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON departments.id = roles.department_id");
     employees.map(addDashes)
 
     console.table(employees);

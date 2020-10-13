@@ -13,5 +13,13 @@ A node.js command line program that allows for easy mangement of an employee dat
 ## Usage
 Run `npm start` to begin the program once it's installed. You will be met with a menu with a number of options that allow you to make changes to your employee database. It is recommendd that you add departments, then roles and then employees as you will need to departments and roles to assign to employees when they are created.
 
+## Example Usage
+### Viewing Data
+![viewing data example gif](./assets/viewing_data.gif)
+### Promotion
+![promotion exmample gif](./assets/promotion.gif)
+### New Department
+![new department example gi](./assets/new_department.gif)
+
 ## Technologies
 This program is written in Node.js and uses the mysql and inquirer packages to power the database interface and cli respectively.

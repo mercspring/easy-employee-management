@@ -1,7 +1,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const util = require("util");
-const { InquirerList, InquirerInput } = require("./inquirerConst");
+const { InquirerList, InquirerInput } = require("./lib/inquirerConst");
 const cTable = require('console.table');
 const connection = mysql.createConnection({
     host: "localhost",
